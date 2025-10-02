@@ -1,12 +1,12 @@
 import flet as ft
 import json
-import live
+import subprocess
 
 config_from_ui = {
 	"key": '',
 	"model": "gemini-2.5-flash-native-audio-preview-09-2025",
 	"voice": "Zephyr",
-	"modalities": ["AUDIO"],
+	"modalities": "AUDIO",
 	"media_resolution_num": 1,
 	"search": False
 }
@@ -14,13 +14,6 @@ config_from_ui = {
 def set_config_from_ui(key, value):
 	global config_from_ui
 	config_from_ui[key] = value
-def set_config_from_ui_checkbox(modality, bool_value):
-	global config_from_ui
-	if modality in config_from_ui['modalities']:
-		if bool_value:
-			config_from_ui['modalities'].append(modality)
-		else:
-			config_from_ui['modalities'].remove(modality)
 def save(_):
 	with open('config.json', 'w') as f:
 		f.write(json.dumps(config_from_ui, indent=4))
@@ -37,8 +30,9 @@ except Exception as e:
 
 def start(page: ft.Page):
 	print("Starting LiveAgent")
+	save(None)
 	page.window.close()
-	live.live(config_from_ui)
+	subprocess.Popen(["python", "live.py"])
 
 def main(page: ft.Page):
 	page.title = "LiveAgent"
@@ -77,10 +71,10 @@ def main(page: ft.Page):
 			ft.DropdownOption("Sulafat")
 		],value=config_from_ui['voice'],on_change=lambda e: set_config_from_ui('voice',e.control.value)),
 		ft.Text("responseModalities:"),
-		ft.Row(controls=[
-			ft.Checkbox(label="AUDIO", value=config_from_ui['modalities'].count('AUDIO') > 0, on_change=lambda e: set_config_from_ui_checkbox('AUDIO',e.control.value)),
-			ft.Checkbox(label="TEXT", value=config_from_ui['modalities'].count('TEXT') > 0, on_change=lambda e: set_config_from_ui_checkbox('TEXT',e.control.value)),
-		]),
+		ft.RadioGroup(content=ft.Row(controls=[
+			ft.Radio(label="AUDIO", value="AUDIO"),
+			ft.Radio(label="TEXT", value="TEXT")
+		]), value=config_from_ui['modalities'], on_change=lambda e: set_config_from_ui('modalities',e.control.value)),
 		ft.Text("mediaResolution:"),
 		ft.Slider(min=0,max=2,divisions=2,value=config_from_ui['media_resolution_num'],on_change=lambda e: set_config_from_ui('media_resolution_num',int(e.control.value))),
 		ft.Switch(label="  Grounding with Google Search", value=config_from_ui['search'], on_change=lambda e: set_config_from_ui('search',e.control.value)),
